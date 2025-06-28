@@ -4,11 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import tab screens
-import MapScreen from './tabs/MapScreen';
-import SearchScreen from './tabs/SearchScreen';
+import ExploreScreen from './tabs/ExploreScreen';
 import FavoritesScreen from './tabs/FavoritesScreen';
 import MyStoreScreen from './tabs/MyStoreScreen';
 import POSScreen from './tabs/POSScreen';
+import SettingsScreen from './tabs/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,16 +21,16 @@ const TabNavigator = () => {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === 'Map') {
-            iconName = focused ? 'map' : 'map-outline';
-          } else if (route.name === 'Search') {
-            iconName = focused ? 'search' : 'search-outline';
+          if (route.name === 'Explore') {
+            iconName = focused ? 'compass' : 'compass-outline';
           } else if (route.name === 'Favorites') {
             iconName = focused ? 'heart' : 'heart-outline';
           } else if (route.name === 'MyStore') {
             iconName = focused ? 'storefront' : 'storefront-outline';
           } else if (route.name === 'POS') {
             iconName = focused ? 'calculator' : 'calculator-outline';
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'settings' : 'settings-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -63,19 +63,11 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen 
-        name="Map" 
-        component={MapScreen}
+        name="Explore" 
+        component={ExploreScreen}
         options={{
-          title: 'Map',
-          headerTitle: 'Nearby Stores',
-        }}
-      />
-      <Tab.Screen 
-        name="Search" 
-        component={SearchScreen}
-        options={{
-          title: 'Search',
-          headerTitle: 'Search & Discover',
+          title: 'Explore',
+          headerTitle: 'Explore Nearby',
         }}
       />
       <Tab.Screen 
@@ -100,6 +92,14 @@ const TabNavigator = () => {
         options={{
           title: 'POS',
           headerTitle: 'Point of Sale',
+        }}
+      />
+      <Tab.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{
+          title: 'Settings',
+          headerTitle: 'Settings',
         }}
       />
     </Tab.Navigator>
