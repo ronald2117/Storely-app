@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   Image, 
   Alert,
-  Platform 
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,15 +16,35 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContextSimple';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import Dropdown from '../components/Dropdown';
+import locationService from '../services/locationService';
 
 const CreateStoreScreen = ({ navigation }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [locationData, setLocationData] = useState({
+    regions: [],
+    provinces: [],
+    cities: [],
+    barangays: [],
+    loadingRegions: true,
+    loadingProvinces: false,
+    loadingCities: false,
+    loadingBarangays: false,
+  });
+  
   const [storeData, setStoreData] = useState({
     name: '',
     description: '',
     category: '',
-    address: '',
+    location: {
+      region: '',
+      province: '',
+      city: '',
+      barangay: '',
+      streetAddress: '',
+      zipCode: '',
+    },
     contactNumber: '',
     email: user?.email || '',
     coverImage: null,
@@ -33,6 +54,59 @@ const CreateStoreScreen = ({ navigation }) => {
       daysOpen: 'Monday to Saturday'
     }
   });
+
+  // Load regions on component mount
+  useEffect(() => {
+    loadRegions();
+  }, []);
+
+  const loadRegions = async () => {
+    try {
+      setLocationData(prev => ({ ...prev, loadingRegions: true }));
+      const regions = await locationService.getRegions();
+      setLocationData(prev => ({ ...prev, regions, loadingRegions: false }));
+    } catch (error) {
+      console.error('Error loading regions:', error);
+      Alert.alert('Error', 'Failed to load regions. Please check your internet connection.');
+      setLocationData(prev => ({ ...prev, loadingRegions: false }));
+    }
+  };
+
+  const loadProvinces = async (regionCode) => {
+    try {
+      setLocationData(prev => ({ ...prev, loadingProvinces: true, provinces: [], cities: [], barangays: [] }));
+      const provinces = await locationService.getProvinces(regionCode);
+      setLocationData(prev => ({ ...prev, provinces, loadingProvinces: false }));
+    } catch (error) {
+      console.error('Error loading provinces:', error);
+      Alert.alert('Error', 'Failed to load provinces. Please try again.');
+      setLocationData(prev => ({ ...prev, loadingProvinces: false }));
+    }
+  };
+
+  const loadCities = async (provinceCode) => {
+    try {
+      setLocationData(prev => ({ ...prev, loadingCities: true, cities: [], barangays: [] }));
+      const cities = await locationService.getCities(provinceCode);
+      setLocationData(prev => ({ ...prev, cities, loadingCities: false }));
+    } catch (error) {
+      console.error('Error loading cities:', error);
+      Alert.alert('Error', 'Failed to load cities. Please try again.');
+      setLocationData(prev => ({ ...prev, loadingCities: false }));
+    }
+  };
+
+  const loadBarangays = async (cityCode) => {
+    try {
+      setLocationData(prev => ({ ...prev, loadingBarangays: true, barangays: [] }));
+      const barangays = await locationService.getBarangays(cityCode);
+      setLocationData(prev => ({ ...prev, barangays, loadingBarangays: false }));
+    } catch (error) {
+      console.error('Error loading barangays:', error);
+      Alert.alert('Error', 'Failed to load barangays. Please try again.');
+      setLocationData(prev => ({ ...prev, loadingBarangays: false }));
+    }
+  };
 
   const storeCategories = [
     { id: 'sari-sari', name: 'Sari-Sari Store', icon: '🏪' },
@@ -57,7 +131,7 @@ const CreateStoreScreen = ({ navigation }) => {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images,
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.8,
@@ -74,6 +148,48 @@ const CreateStoreScreen = ({ navigation }) => {
     }
   };
 
+  // Helper functions for location selection
+  const getProvinceOptions = () => {
+    return locationData.provinces;
+  };
+
+  const getCityOptions = () => {
+    return locationData.cities;
+  };
+
+  const getBarangayOptions = () => {
+    return locationData.barangays;
+  };
+
+  const handleLocationChange = (field, value) => {
+    setStoreData(prev => {
+      const newLocation = { ...prev.location, [field]: value };
+      
+      // Clear dependent fields and load new data when parent changes
+      if (field === 'region') {
+        newLocation.province = '';
+        newLocation.city = '';
+        newLocation.barangay = '';
+        if (value) {
+          loadProvinces(value);
+        }
+      } else if (field === 'province') {
+        newLocation.city = '';
+        newLocation.barangay = '';
+        if (value) {
+          loadCities(value);
+        }
+      } else if (field === 'city') {
+        newLocation.barangay = '';
+        if (value) {
+          loadBarangays(value);
+        }
+      }
+      
+      return { ...prev, location: newLocation };
+    });
+  };
+
   const handleCreateStore = async () => {
     // Validation
     if (!storeData.name.trim()) {
@@ -84,8 +200,24 @@ const CreateStoreScreen = ({ navigation }) => {
       Alert.alert('Validation Error', 'Please select a store category');
       return;
     }
-    if (!storeData.address.trim()) {
-      Alert.alert('Validation Error', 'Store address is required');
+    if (!storeData.location.region) {
+      Alert.alert('Validation Error', 'Please select a region');
+      return;
+    }
+    if (!storeData.location.province) {
+      Alert.alert('Validation Error', 'Please select a province');
+      return;
+    }
+    if (!storeData.location.city) {
+      Alert.alert('Validation Error', 'Please select a city');
+      return;
+    }
+    if (!storeData.location.barangay) {
+      Alert.alert('Validation Error', 'Please select a barangay');
+      return;
+    }
+    if (!storeData.location.streetAddress.trim()) {
+      Alert.alert('Validation Error', 'Street address is required');
       return;
     }
     if (!storeData.contactNumber.trim()) {
@@ -200,16 +332,66 @@ const CreateStoreScreen = ({ navigation }) => {
 
         {/* Location & Contact */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Location & Contact</Text>
+          <Text style={styles.sectionTitle}>Store Location</Text>
+          
+          <Dropdown
+            label="Region"
+            value={storeData.location.region}
+            onSelect={(value) => handleLocationChange('region', value)}
+            options={regions}
+            placeholder="Select region"
+            required
+          />
+          
+          <Dropdown
+            label="Province"
+            value={storeData.location.province}
+            onSelect={(value) => handleLocationChange('province', value)}
+            options={getProvinceOptions()}
+            placeholder="Select province"
+            required
+          />
+          
+          <Dropdown
+            label="City/Municipality"
+            value={storeData.location.city}
+            onSelect={(value) => handleLocationChange('city', value)}
+            options={getCityOptions()}
+            placeholder="Select city/municipality"
+            required
+          />
+          
+          <Dropdown
+            label="Barangay"
+            value={storeData.location.barangay}
+            onSelect={(value) => handleLocationChange('barangay', value)}
+            options={getBarangayOptions()}
+            placeholder="Select barangay"
+            required
+          />
           
           <Input
-            label="Store Address *"
-            value={storeData.address}
-            onChangeText={(text) => setStoreData(prev => ({ ...prev, address: text }))}
-            placeholder="Street, Barangay, City"
+            label="Street Address *"
+            value={storeData.location.streetAddress}
+            onChangeText={(text) => handleLocationChange('streetAddress', text)}
+            placeholder="House/Building No., Street Name"
             multiline
             numberOfLines={2}
           />
+          
+          <Input
+            label="ZIP Code"
+            value={storeData.location.zipCode}
+            onChangeText={(text) => handleLocationChange('zipCode', text)}
+            placeholder="1234"
+            keyboardType="numeric"
+            maxLength={4}
+          />
+        </View>
+
+        {/* Contact Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Contact Information</Text>
           
           <Input
             label="Contact Number *"
