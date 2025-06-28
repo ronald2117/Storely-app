@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContextSimple';
 
 const HomeTabsScreen = ({ navigation }) => {
   const { user, isGuest, logout } = useAuth();

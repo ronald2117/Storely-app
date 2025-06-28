@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContextSimple';
 import StartScreen from './src/screens/StartScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
-import HomeTabsScreen from './src/screens/HomeTabsScreen';
+import TabNavigator from './src/screens/TabNavigator';
 import LoadingScreen from './src/components/LoadingScreen';
 
 const Stack = createNativeStackNavigator();
@@ -108,7 +108,7 @@ function AppNavigator() {
         {/* Main App Flow */}
         <Stack.Screen 
           name="HomeTabs" 
-          component={HomeTabsScreen}
+          component={TabNavigator}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
