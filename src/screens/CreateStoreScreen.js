@@ -1,0 +1,417 @@
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  Image, 
+  Alert,
+  Platform 
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '../context/AuthContextSimple';
+import Input from '../components/Input';
+import Button from '../components/Button';
+
+const CreateStoreScreen = ({ navigation }) => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [storeData, setStoreData] = useState({
+    name: '',
+    description: '',
+    category: '',
+    address: '',
+    contactNumber: '',
+    email: user?.email || '',
+    coverImage: null,
+    operatingHours: {
+      open: '8:00 AM',
+      close: '6:00 PM',
+      daysOpen: 'Monday to Saturday'
+    }
+  });
+
+  const storeCategories = [
+    { id: 'sari-sari', name: 'Sari-Sari Store', icon: '🏪' },
+    { id: 'food', name: 'Food & Restaurant', icon: '🍕' },
+    { id: 'groceries', name: 'Groceries', icon: '🛒' },
+    { id: 'pharmacy', name: 'Pharmacy', icon: '💊' },
+    { id: 'clothing', name: 'Clothing', icon: '👕' },
+    { id: 'electronics', name: 'Electronics', icon: '📱' },
+    { id: 'services', name: 'Services', icon: '🔧' },
+    { id: 'beauty', name: 'Beauty & Personal Care', icon: '💄' },
+    { id: 'hardware', name: 'Hardware', icon: '🔨' },
+    { id: 'other', name: 'Other', icon: '🏬' },
+  ];
+
+  const handleImagePick = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission Required', 'Permission to access camera roll is required!');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setStoreData(prev => ({
+          ...prev,
+          coverImage: result.assets[0].uri
+        }));
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const handleCreateStore = async () => {
+    // Validation
+    if (!storeData.name.trim()) {
+      Alert.alert('Validation Error', 'Store name is required');
+      return;
+    }
+    if (!storeData.category) {
+      Alert.alert('Validation Error', 'Please select a store category');
+      return;
+    }
+    if (!storeData.address.trim()) {
+      Alert.alert('Validation Error', 'Store address is required');
+      return;
+    }
+    if (!storeData.contactNumber.trim()) {
+      Alert.alert('Validation Error', 'Contact number is required');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // TODO: Implement actual store creation with Firebase/backend
+      // For now, simulate the process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      Alert.alert(
+        'Store Created!',
+        'Your store has been successfully created. You can now start adding products.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('MyStore')
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create store. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const CategorySelector = () => (
+    <View style={styles.section}>
+      <Text style={styles.label}>Store Category *</Text>
+      <View style={styles.categoryGrid}>
+        {storeCategories.map((category) => (
+          <View key={category.id} style={styles.categoryItem}>
+            <TouchableOpacity
+              style={[
+                styles.categoryCard,
+                storeData.category === category.id && styles.categoryCardSelected
+              ]}
+              onPress={() => setStoreData(prev => ({ ...prev, category: category.id }))}
+            >
+              <Text style={styles.categoryIcon}>{category.icon}</Text>
+              <Text style={[
+                styles.categoryText,
+                storeData.category === category.id && styles.categoryTextSelected
+              ]}>
+                {category.name}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#111827" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Create Store</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Store Cover Image */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Store Cover Photo</Text>
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
+            {storeData.coverImage ? (
+              <Image source={{ uri: storeData.coverImage }} style={styles.coverImage} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Ionicons name="camera" size={32} color="#9ca3af" />
+                <Text style={styles.imageText}>Add Cover Photo</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Basic Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Basic Information</Text>
+          
+          <Input
+            label="Store Name *"
+            value={storeData.name}
+            onChangeText={(text) => setStoreData(prev => ({ ...prev, name: text }))}
+            placeholder="e.g., Lola Maria's Sari-Sari Store"
+          />
+          
+          <Input
+            label="Description"
+            value={storeData.description}
+            onChangeText={(text) => setStoreData(prev => ({ ...prev, description: text }))}
+            placeholder="Tell customers about your store..."
+            multiline
+            numberOfLines={3}
+            style={styles.textArea}
+          />
+        </View>
+
+        {/* Category Selection */}
+        <CategorySelector />
+
+        {/* Location & Contact */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Location & Contact</Text>
+          
+          <Input
+            label="Store Address *"
+            value={storeData.address}
+            onChangeText={(text) => setStoreData(prev => ({ ...prev, address: text }))}
+            placeholder="Street, Barangay, City"
+            multiline
+            numberOfLines={2}
+          />
+          
+          <Input
+            label="Contact Number *"
+            value={storeData.contactNumber}
+            onChangeText={(text) => setStoreData(prev => ({ ...prev, contactNumber: text }))}
+            placeholder="09XX XXX XXXX"
+            keyboardType="phone-pad"
+          />
+          
+          <Input
+            label="Email"
+            value={storeData.email}
+            onChangeText={(text) => setStoreData(prev => ({ ...prev, email: text }))}
+            placeholder="store@example.com"
+            keyboardType="email-address"
+          />
+        </View>
+
+        {/* Operating Hours */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Operating Hours</Text>
+          <View style={styles.hoursContainer}>
+            <View style={styles.hourRow}>
+              <Text style={styles.hourLabel}>Open:</Text>
+              <TouchableOpacity style={styles.timeButton}>
+                <Text style={styles.timeText}>{storeData.operatingHours.open}</Text>
+                <Ionicons name="chevron-down" size={16} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.hourRow}>
+              <Text style={styles.hourLabel}>Close:</Text>
+              <TouchableOpacity style={styles.timeButton}>
+                <Text style={styles.timeText}>{storeData.operatingHours.close}</Text>
+                <Ionicons name="chevron-down" size={16} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <Text style={styles.daysText}>{storeData.operatingHours.daysOpen}</Text>
+        </View>
+
+        {/* Create Button */}
+        <View style={styles.createButtonContainer}>
+          <Button
+            title={loading ? "Creating Store..." : "Create Store"}
+            onPress={handleCreateStore}
+            variant="primary"
+            disabled={loading}
+            style={styles.createButton}
+          />
+        </View>
+
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  content: {
+    paddingHorizontal: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  imagePicker: {
+    marginBottom: 16,
+  },
+  coverImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    resizeMode: 'cover',
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f9fafb',
+  },
+  imageText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+  },
+  categoryItem: {
+    width: '50%',
+    paddingHorizontal: 4,
+    marginBottom: 8,
+  },
+  categoryCard: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  categoryCardSelected: {
+    backgroundColor: '#eff6ff',
+    borderColor: '#2563eb',
+  },
+  categoryIcon: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  categoryText: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  categoryTextSelected: {
+    color: '#2563eb',
+    fontWeight: '600',
+  },
+  hoursContainer: {
+    marginBottom: 12,
+  },
+  hourRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  hourLabel: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  timeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+  },
+  timeText: {
+    fontSize: 16,
+    color: '#111827',
+    marginRight: 4,
+  },
+  daysText: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  createButtonContainer: {
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  createButton: {
+    width: '100%',
+  },
+  bottomSpacing: {
+    height: 32,
+  },
+});
+
+export default CreateStoreScreen;

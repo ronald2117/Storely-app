@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContextSimple';
 import StartScreen from './src/screens/StartScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import CreateStoreScreen from './src/screens/CreateStoreScreen';
 import TabNavigator from './src/screens/TabNavigator';
 import LoadingScreen from './src/components/LoadingScreen';
 
@@ -59,7 +60,7 @@ function AppNavigator() {
         <NavigationContainer>
           <Stack.Navigator initialRouteName="Start">
             <Stack.Screen name="Start" component={StartScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="HomeTabs" component={HomeTabsScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="HomeTabs" component={TabNavigator} options={{ headerShown: false }} />
           </Stack.Navigator>
         </NavigationContainer>
       </View>
@@ -103,6 +104,13 @@ function AppNavigator() {
             headerStyle: { backgroundColor: '#ffffff' },
             headerTintColor: '#374151',
           }}
+        />
+        
+        {/* Store Management Flow */}
+        <Stack.Screen 
+          name="CreateStore" 
+          component={CreateStoreScreen}
+          options={{ headerShown: false }}
         />
         
         {/* Main App Flow */}

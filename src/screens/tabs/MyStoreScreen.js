@@ -1,11 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContextSimple';
 import Button from '../../components/Button';
 
 const MyStoreScreen = ({ navigation }) => {
   const { isGuest, user } = useAuth();
+  const [hasStore, setHasStore] = useState(false); // TODO: Check if user already has a store
 
   if (isGuest) {
     return (
@@ -31,6 +33,129 @@ const MyStoreScreen = ({ navigation }) => {
     );
   }
 
+  // If user doesn't have a store yet, show store creation interface
+  if (!hasStore) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView 
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.title}>Start Your Store 🏪</Text>
+          <Text style={styles.subtitle}>
+            Join the local marketplace and start selling to your barangay
+          </Text>
+          
+          {/* Benefits Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Why create a store?</Text>
+            
+            <View style={styles.benefitItem}>
+              <View style={styles.benefitIcon}>
+                <Ionicons name="people" size={20} color="#2563eb" />
+              </View>
+              <View style={styles.benefitText}>
+                <Text style={styles.benefitTitle}>Reach Local Customers</Text>
+                <Text style={styles.benefitDescription}>
+                  Connect with neighbors and customers in your area
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.benefitItem}>
+              <View style={styles.benefitIcon}>
+                <Ionicons name="phone-portrait" size={20} color="#2563eb" />
+              </View>
+              <View style={styles.benefitText}>
+                <Text style={styles.benefitTitle}>Easy Management</Text>
+                <Text style={styles.benefitDescription}>
+                  Manage inventory, orders, and sales from your phone
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.benefitItem}>
+              <View style={styles.benefitIcon}>
+                <Ionicons name="cash" size={20} color="#2563eb" />
+              </View>
+              <View style={styles.benefitText}>
+                <Text style={styles.benefitTitle}>Multiple Payment Options</Text>
+                <Text style={styles.benefitDescription}>
+                  Accept cash, GCash, and other digital payments
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.benefitItem}>
+              <View style={styles.benefitIcon}>
+                <Ionicons name="analytics" size={20} color="#2563eb" />
+              </View>
+              <View style={styles.benefitText}>
+                <Text style={styles.benefitTitle}>Track Your Success</Text>
+                <Text style={styles.benefitDescription}>
+                  Get insights on sales, popular products, and customer trends
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Getting Started Steps */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Getting Started</Text>
+            
+            <View style={styles.stepItem}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>1</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Create Store Profile</Text>
+                <Text style={styles.stepDescription}>
+                  Add your store name, description, and contact details
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.stepItem}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>2</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Add Products</Text>
+                <Text style={styles.stepDescription}>
+                  Upload photos and details of items you want to sell
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.stepItem}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>3</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Start Selling</Text>
+                <Text style={styles.stepDescription}>
+                  Your store will be visible to customers in your area
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Create Store Button */}
+          <View style={styles.createStoreContainer}>
+            <Button
+              title="Create My Store"
+              onPress={() => navigation.navigate('CreateStore')}
+              variant="primary"
+              style={styles.createStoreButton}
+            />
+            <Text style={styles.freeText}>Free to start • No setup fees</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // If user has a store, show store management interface
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView 
@@ -42,42 +167,61 @@ const MyStoreScreen = ({ navigation }) => {
           Manage your business and products
         </Text>
         
-        {/* Store Setup Options */}
+        {/* Store Management Options */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Getting Started</Text>
-          <View style={styles.optionCard}>
-            <Text style={styles.optionTitle}>📝 Set up store profile</Text>
-            <Text style={styles.optionDescription}>
-              Add your store name, description, and contact info
-            </Text>
-          </View>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
           
-          <View style={styles.optionCard}>
-            <Text style={styles.optionTitle}>📦 Add products</Text>
-            <Text style={styles.optionDescription}>
-              Upload photos and details of items you want to sell
-            </Text>
-          </View>
+          <TouchableOpacity style={styles.actionCard}>
+            <View style={styles.actionIcon}>
+              <Ionicons name="add-circle" size={24} color="#2563eb" />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>Add Products</Text>
+              <Text style={styles.actionDescription}>
+                Add new items to your inventory
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
           
-          <View style={styles.optionCard}>
-            <Text style={styles.optionTitle}>💰 Set up payments</Text>
-            <Text style={styles.optionDescription}>
-              Configure payment methods and pricing
-            </Text>
-          </View>
+          <TouchableOpacity style={styles.actionCard}>
+            <View style={styles.actionIcon}>
+              <Ionicons name="list" size={24} color="#16a34a" />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>Manage Orders</Text>
+              <Text style={styles.actionDescription}>
+                View and update customer orders
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.actionCard}>
+            <View style={styles.actionIcon}>
+              <Ionicons name="analytics" size={24} color="#dc2626" />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>View Analytics</Text>
+              <Text style={styles.actionDescription}>
+                Check your sales performance
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.placeholder}>
           <Text style={styles.placeholderText}>
-            🚀 Store management coming soon!
+            🚀 More features coming soon!
           </Text>
           <Text style={styles.featureList}>
-            Features to implement:{'\n'}
-            • Store profile setup{'\n'}
+            Upcoming features:{'\n'}
             • Product management{'\n'}
             • Inventory tracking{'\n'}
-            • Order management{'\n'}
-            • Sales analytics
+            • Customer reviews{'\n'}
+            • Promotional campaigns{'\n'}
+            • Detailed analytics
           </Text>
         </View>
       </ScrollView>
@@ -164,6 +308,116 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  // New styles for store creation flow
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  benefitIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  benefitText: {
+    flex: 1,
+  },
+  benefitTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  benefitDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    lineHeight: 20,
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  stepNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#2563eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  stepNumberText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    lineHeight: 20,
+  },
+  createStoreContainer: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  createStoreButton: {
+    width: '100%',
+    marginBottom: 12,
+  },
+  freeText: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  actionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  actionDescription: {
+    fontSize: 14,
+    color: '#6b7280',
   },
 });
 

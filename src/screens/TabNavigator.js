@@ -67,7 +67,7 @@ const TabNavigator = () => {
         component={ExploreScreen}
         options={{
           title: 'Explore',
-          headerTitle: 'Explore Nearby',
+          headerShown: false,
         }}
       />
       <Tab.Screen 
@@ -75,7 +75,7 @@ const TabNavigator = () => {
         component={FavoritesScreen}
         options={{
           title: 'Favorites',
-          headerTitle: 'My Favorites',
+          headerShown: false,
         }}
       />
       <Tab.Screen 
@@ -83,7 +83,7 @@ const TabNavigator = () => {
         component={MyStoreScreen}
         options={{
           title: 'My Store',
-          headerTitle: 'Store Management',
+          headerShown: false,
         }}
       />
       <Tab.Screen 
@@ -91,7 +91,7 @@ const TabNavigator = () => {
         component={POSScreen}
         options={{
           title: 'POS',
-          headerTitle: 'Point of Sale',
+          headerShown: false,
         }}
       />
       <Tab.Screen 
@@ -99,7 +99,7 @@ const TabNavigator = () => {
         component={SettingsScreen}
         options={{
           title: 'Settings',
-          headerTitle: 'Settings',
+          headerShown: false,
         }}
       />
     </Tab.Navigator>
