@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContextSimple';
 
 const StartScreen = ({ navigation }) => {
   const { continueAsGuest } = useAuth();

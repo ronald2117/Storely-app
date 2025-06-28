@@ -3,7 +3,7 @@ import { View, Text, Alert, KeyboardAvoidingView, Platform, ScrollView, StatusBa
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContextSimple';
 
 const RegisterScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
