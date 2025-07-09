@@ -58,7 +58,7 @@ const StartScreen = ({ navigation }) => {
           <View style={styles.featureRow}>
             <View style={styles.bullet} />
             <Text style={styles.featureText}>
-              Offline POS system
+              Manage your product inventory
             </Text>
           </View>
         </View>

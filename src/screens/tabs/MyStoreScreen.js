@@ -69,19 +69,19 @@ const MyStoreScreen = ({ navigation }) => {
               <View style={styles.benefitText}>
                 <Text style={styles.benefitTitle}>Easy Management</Text>
                 <Text style={styles.benefitDescription}>
-                  Manage inventory, orders, and sales from your phone
+                  Manage inventory and product visibility from your phone
                 </Text>
               </View>
             </View>
             
             <View style={styles.benefitItem}>
               <View style={styles.benefitIcon}>
-                <Ionicons name="cash" size={20} color="#2563eb" />
+                <Ionicons name="eye" size={20} color="#2563eb" />
               </View>
               <View style={styles.benefitText}>
-                <Text style={styles.benefitTitle}>Multiple Payment Options</Text>
+                <Text style={styles.benefitTitle}>Control Visibility</Text>
                 <Text style={styles.benefitDescription}>
-                  Accept cash, GCash, and other digital payments
+                  Choose which products are public or keep them private
                 </Text>
               </View>
             </View>
@@ -91,9 +91,9 @@ const MyStoreScreen = ({ navigation }) => {
                 <Ionicons name="analytics" size={20} color="#2563eb" />
               </View>
               <View style={styles.benefitText}>
-                <Text style={styles.benefitTitle}>Track Your Success</Text>
+                <Text style={styles.benefitTitle}>Track Your Inventory</Text>
                 <Text style={styles.benefitDescription}>
-                  Get insights on sales, popular products, and customer trends
+                  Get insights on product availability and customer interest
                 </Text>
               </View>
             </View>
@@ -132,9 +132,9 @@ const MyStoreScreen = ({ navigation }) => {
                 <Text style={styles.stepNumberText}>3</Text>
               </View>
               <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Start Selling</Text>
+                <Text style={styles.stepTitle}>Manage Inventory</Text>
                 <Text style={styles.stepDescription}>
-                  Your store will be visible to customers in your area
+                  Set availability and visibility for your products
                 </Text>
               </View>
             </View>
@@ -171,14 +171,17 @@ const MyStoreScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           
-          <TouchableOpacity style={styles.actionCard}>
+          <TouchableOpacity 
+            style={styles.actionCard}
+            onPress={() => navigation.navigate('Products')}
+          >
             <View style={styles.actionIcon}>
-              <Ionicons name="add-circle" size={24} color="#2563eb" />
+              <Ionicons name="cube" size={24} color="#2563eb" />
             </View>
             <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Add Products</Text>
+              <Text style={styles.actionTitle}>Manage Products</Text>
               <Text style={styles.actionDescription}>
-                Add new items to your inventory
+                Add, edit, and organize your inventory
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
@@ -186,12 +189,12 @@ const MyStoreScreen = ({ navigation }) => {
           
           <TouchableOpacity style={styles.actionCard}>
             <View style={styles.actionIcon}>
-              <Ionicons name="list" size={24} color="#16a34a" />
+              <Ionicons name="eye" size={24} color="#16a34a" />
             </View>
             <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Manage Orders</Text>
+              <Text style={styles.actionTitle}>Product Visibility</Text>
               <Text style={styles.actionDescription}>
-                View and update customer orders
+                Manage which products are public or private
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
@@ -202,9 +205,9 @@ const MyStoreScreen = ({ navigation }) => {
               <Ionicons name="analytics" size={24} color="#dc2626" />
             </View>
             <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>View Analytics</Text>
+              <Text style={styles.actionTitle}>Inventory Reports</Text>
               <Text style={styles.actionDescription}>
-                Check your sales performance
+                View your product statistics and availability
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
@@ -213,15 +216,15 @@ const MyStoreScreen = ({ navigation }) => {
 
         <View style={styles.placeholder}>
           <Text style={styles.placeholderText}>
-            🚀 More features coming soon!
+            � Product Management Hub
           </Text>
           <Text style={styles.featureList}>
-            Upcoming features:{'\n'}
-            • Product management{'\n'}
-            • Inventory tracking{'\n'}
-            • Customer reviews{'\n'}
-            • Promotional campaigns{'\n'}
-            • Detailed analytics
+            Available features:{'\n'}
+            • Add and edit products{'\n'}
+            • Set availability status{'\n'}
+            • Control public/private visibility{'\n'}
+            • Search and filter products{'\n'}
+            • Quick product actions
           </Text>
         </View>
       </ScrollView>

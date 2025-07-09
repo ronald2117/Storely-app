@@ -179,6 +179,11 @@ const styles = StyleSheet.create({
     borderColor: '#2563eb',
     backgroundColor: '#ffffff',
   },
+  dropdownDisabled: {
+    backgroundColor: '#f3f4f6',
+    borderColor: '#e5e7eb',
+    opacity: 0.6,
+  },
   dropdownText: {
     fontSize: 16,
     color: '#111827',
@@ -235,6 +240,9 @@ const styles = StyleSheet.create({
   selectedOptionText: {
     color: '#2563eb',
     fontWeight: '500',
+  },
+  disabledText: {
+    color: '#9ca3af',
   },
 });
 

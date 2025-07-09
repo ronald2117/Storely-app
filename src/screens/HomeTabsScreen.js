@@ -43,7 +43,7 @@ const HomeTabsScreen = ({ navigation }) => {
             </Text>
             <Text style={styles.comingSoon}>
               Tab navigation coming soon:{'\n'}
-              Map • Search • Favorites • My Store • POS
+              Map • Search • Favorites • My Store • Products
             </Text>
             <Button
               title="Sign Out"

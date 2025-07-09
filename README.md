@@ -1,6 +1,6 @@
 # 📱 Storely - Barangay Commerce App
 
-A modern mobile-first app for barangay commerce in the Philippines. Guests can browse stores/products, and logged-in users can manage their store, products, and use an offline POS.
+A modern mobile-first app for barangay commerce in the Philippines. Guests can browse stores/products, and logged-in users can manage their store and product inventory with full CRUD functionality.
 
 ## 🔧 Tech Stack
 
@@ -13,7 +13,7 @@ A modern mobile-first app for barangay commerce in the Philippines. Guests can b
 ## 🧱 Screen Flow
 
 - ✅ **StartScreen** → Guest Mode or Login/Register
-- 🚧 **HomeTabs**: [Map], [Search], [Favorites], [My Store], [POS]
+- 🚧 **HomeTabs**: [Map], [Search], [Favorites], [My Store], [Products]
 - ✅ Guest can browse (limited features)
 - ✅ Seller can log in and access full features
 
@@ -73,22 +73,79 @@ A modern mobile-first app for barangay commerce in the Philippines. Guests can b
 - ✅ Stack navigation with proper auth flow
 - ✅ Context-based authentication state management
 
+### Product Management
+- ✅ Complete CRUD functionality for products
+- ✅ Product search and filtering by category
+- ✅ Availability toggle (Available/Unavailable)
+- ✅ Visibility control (Public/Private)
+- ✅ Product categories and descriptions
+- ✅ Price and quantity management
+- ✅ Image URL support
+- ✅ Responsive product cards with quick actions
+
+## 📦 Product Management Features
+
+The **Products** tab provides comprehensive inventory management for store owners:
+
+### Core Functionality
+- **Create Products**: Add new products with name, description, category, price, and quantity
+- **Edit Products**: Update existing product information with inline editing
+- **Delete Products**: Remove products from inventory with confirmation dialogs
+- **Search & Filter**: Real-time search by name/description and filter by category
+- **Quick Actions**: Toggle availability and visibility with single taps
+
+### Product Properties
+- **Basic Info**: Name, description, category, price, quantity
+- **Availability**: Mark products as available/unavailable for sale
+- **Visibility**: Set products as public (visible to customers) or private
+- **Categories**: Electronics, Clothing, Food & Beverages, Home & Garden, Books, Sports, Health & Beauty, Other
+- **Image Support**: Add product images via URL
+
+### User Experience
+- **Guest Mode**: Prompts users to sign in to access product management
+- **Responsive Design**: Clean, mobile-first interface with card-based layout
+- **Status Badges**: Visual indicators for availability and visibility status
+- **Modal Forms**: Full-screen forms for adding/editing products with validation
+- **Empty States**: Helpful messaging when no products are found
+
+### Technical Implementation
+- **Local Storage**: Products stored in AsyncStorage for offline functionality
+- **State Management**: React hooks for form state and product management
+- **Validation**: Required field validation and numeric input handling
+- **Performance**: Efficient filtering and search with useEffect optimization
+
 ## 📁 Project Structure
 
 ```
 src/
 ├── components/          # Reusable UI components
 │   ├── Button.js       # Custom button component
-│   └── Input.js        # Custom input component
+│   ├── Input.js        # Custom input component
+│   ├── Dropdown.js     # Custom dropdown component
+│   └── LoadingScreen.js # Loading state component
 ├── context/            # React Context providers
-│   └── AuthContext.js  # Authentication state management
+│   ├── AuthContext.js  # Authentication state management
+│   └── AuthContextSimple.js # Simplified auth context
 ├── screens/            # App screens
 │   ├── StartScreen.js  # Welcome/landing screen
 │   ├── LoginScreen.js  # User login
 │   ├── RegisterScreen.js # User registration
-│   └── HomeTabsScreen.js # Main app (placeholder)
-└── services/           # External services
-    └── firebase.js     # Firebase configuration
+│   ├── CreateStoreScreen.js # Store creation
+│   ├── HomeTabsScreen.js # Main app (placeholder)
+│   ├── TabNavigator.js # Bottom tab navigation
+│   └── tabs/          # Tab screens
+│       ├── ExploreScreen.js   # Browse stores and products
+│       ├── FavoritesScreen.js # User favorites
+│       ├── MapScreen.js       # Map with store locations
+│       ├── MyStoreScreen.js   # Store management
+│       ├── ProductsScreen.js  # Product CRUD management
+│       ├── SearchScreen.js    # Search functionality
+│       └── SettingsScreen.js  # User settings
+├── services/           # External services
+│   ├── firebase.js     # Firebase configuration
+│   └── locationService.js # Location services
+└── data/              # Static data
+    └── philippinesLocations.js # Philippines location data
 ```
 
 ## 🔥 Firebase Setup
@@ -135,16 +192,18 @@ This app uses **Nativewind** (Tailwind CSS for React Native) for styling:
 - [ ] Create bottom tab navigation
 
 ### Core Features (Phase 2)
+- [x] Product management with full CRUD functionality
+- [x] Product search and filtering capabilities
 - [ ] Map screen with store pins
 - [ ] Store profile screens
-- [ ] Product search and filters
 - [ ] User favorites system
 
 ### Advanced Features (Phase 3)
-- [ ] Seller dashboard
-- [ ] Product management
-- [ ] Offline POS system
-- [ ] Order management
+- [x] Product management with CRUD functionality
+- [x] Product availability and visibility controls
+- [ ] Seller dashboard analytics
+- [ ] Advanced search and filtering
+- [ ] Order management system
 
 ## 📱 Screenshots
 

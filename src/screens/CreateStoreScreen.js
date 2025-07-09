@@ -338,9 +338,11 @@ const CreateStoreScreen = ({ navigation }) => {
             label="Region"
             value={storeData.location.region}
             onSelect={(value) => handleLocationChange('region', value)}
-            options={regions}
+            options={locationData.regions}
             placeholder="Select region"
             required
+            loading={locationData.loadingRegions}
+            searchable={true}
           />
           
           <Dropdown
@@ -350,6 +352,9 @@ const CreateStoreScreen = ({ navigation }) => {
             options={getProvinceOptions()}
             placeholder="Select province"
             required
+            loading={locationData.loadingProvinces}
+            disabled={!storeData.location.region}
+            searchable={true}
           />
           
           <Dropdown
@@ -359,6 +364,9 @@ const CreateStoreScreen = ({ navigation }) => {
             options={getCityOptions()}
             placeholder="Select city/municipality"
             required
+            loading={locationData.loadingCities}
+            disabled={!storeData.location.province}
+            searchable={true}
           />
           
           <Dropdown
@@ -368,6 +376,9 @@ const CreateStoreScreen = ({ navigation }) => {
             options={getBarangayOptions()}
             placeholder="Select barangay"
             required
+            loading={locationData.loadingBarangays}
+            disabled={!storeData.location.city}
+            searchable={true}
           />
           
           <Input
