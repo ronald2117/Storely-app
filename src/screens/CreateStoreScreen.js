@@ -20,6 +20,8 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import Dropdown from '../components/Dropdown';
 import locationService from '../services/locationService';
+import { uploadImageToCloudinary } from '../services/cloudinaryService';
+import { createStore } from '../services/storeService';
 
 const CreateStoreScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -50,6 +52,7 @@ const CreateStoreScreen = ({ navigation }) => {
     contactNumber: '',
     email: user?.email || '',
     coverImage: null,
+    profileImage: null, // Added profile image
     operatingHours: {
       monday: { isOpen: true, open: '08:00', close: '18:00' },
       tuesday: { isOpen: true, open: '08:00', close: '18:00' },
@@ -62,6 +65,7 @@ const CreateStoreScreen = ({ navigation }) => {
   });
 
   const [showHoursModal, setShowHoursModal] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Load regions on component mount
   useEffect(() => {
@@ -129,30 +133,82 @@ const CreateStoreScreen = ({ navigation }) => {
     { id: 'other', name: 'Other', icon: '🏬' },
   ];
 
-  const handleImagePick = async () => {
+  const handleImagePick = async (imageType = 'cover') => {
     try {
+      console.log('🎨 Starting image pick for:', imageType);
+      
+      // Request permissions
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('📱 Permission result:', permissionResult);
       
       if (permissionResult.granted === false) {
         Alert.alert('Permission Required', 'Permission to access camera roll is required!');
         return;
       }
 
+      console.log('🖼️ Launching image library...');
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // Fixed: was MediaType.Images
         allowsEditing: true,
-        aspect: [16, 9],
+        aspect: imageType === 'profile' ? [1, 1] : [16, 9], // Square for profile, 16:9 for cover
         quality: 0.8,
+        allowsMultipleSelection: false,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      console.log('📸 Image picker result:', result);
+
+      if (result.canceled) {
+        console.log('❌ User canceled image selection');
+        return;
+      }
+
+      if (!result.assets || result.assets.length === 0) {
+        console.error('❌ No assets in result');
+        Alert.alert('Error', 'No image was selected. Please try again.');
+        return;
+      }
+
+      const imageUri = result.assets[0].uri;
+      console.log('✅ Selected image URI:', imageUri);
+      
+      // Show loading state
+      setUploadingImage(true);
+      
+      try {
+        console.log('☁️ Uploading to Cloudinary...');
+        // Upload to Cloudinary
+        const uploadResult = await uploadImageToCloudinary(imageUri);
+        console.log('☁️ Upload result:', uploadResult);
+        
+        if (uploadResult.success) {
+          setStoreData(prev => ({
+            ...prev,
+            [imageType === 'profile' ? 'profileImage' : 'coverImage']: uploadResult.url
+          }));
+          Alert.alert('Success', `${imageType === 'profile' ? 'Profile' : 'Cover'} image uploaded successfully!`);
+        } else {
+          console.warn('⚠️ Cloudinary upload failed, using local image');
+          Alert.alert('Info', `Image selected! Using local storage since cloud upload failed: ${uploadResult.error || 'Unknown error'}`);
+          // Fallback to local storage for development
+          setStoreData(prev => ({
+            ...prev,
+            [imageType === 'profile' ? 'profileImage' : 'coverImage']: imageUri
+          }));
+        }
+      } catch (uploadError) {
+        console.error('💥 Upload error:', uploadError);
+        Alert.alert('Info', 'Image selected! Using local storage (cloud upload failed).');
+        // Fallback to local storage
         setStoreData(prev => ({
           ...prev,
-          coverImage: result.assets[0].uri
+          [imageType === 'profile' ? 'profileImage' : 'coverImage']: imageUri
         }));
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      console.error('💥 Image picker error:', error);
+      Alert.alert('Error', `Failed to pick image: ${error.message || 'Unknown error'}`);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -232,26 +288,42 @@ const CreateStoreScreen = ({ navigation }) => {
       Alert.alert('Validation Error', 'Contact number is required');
       return;
     }
+    if (!storeData.profileImage) {
+      Alert.alert('Validation Error', 'Please add a profile picture for your store');
+      return;
+    }
 
     setLoading(true);
     
     try {
-      // TODO: Implement actual store creation with Firebase/backend
-      // For now, simulate the process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare store data for Firebase
+      const storeDataToSave = {
+        ...storeData,
+        ownerId: user?.uid || 'guest', // Use actual user ID
+        ownerEmail: user?.email || storeData.email,
+        status: 'active',
+      };
+
+      // Create store in Firebase
+      const result = await createStore(storeDataToSave);
       
-      Alert.alert(
-        'Store Created!',
-        'Your store has been successfully created. You can now start adding products.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('MyStore')
-          }
-        ]
-      );
+      if (result.success) {
+        Alert.alert(
+          'Store Created!',
+          'Your store has been successfully created. You can now start adding products.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('MyStore')
+            }
+          ]
+        );
+      } else {
+        throw new Error(result.error || 'Failed to create store');
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to create store. Please try again.');
+      console.error('Store creation error:', error);
+      Alert.alert('Error', error.message || 'Failed to create store. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -363,8 +435,17 @@ const CreateStoreScreen = ({ navigation }) => {
         {/* Store Cover Image */}
         <View style={styles.section}>
           <Text style={styles.label}>Store Cover Photo</Text>
-          <TouchableOpacity style={styles.imagePicker} onPress={handleImagePick}>
-            {storeData.coverImage ? (
+          <TouchableOpacity 
+            style={styles.imagePicker} 
+            onPress={() => handleImagePick('cover')}
+            disabled={uploadingImage}
+          >
+            {uploadingImage ? (
+              <View style={styles.imagePlaceholder}>
+                <ActivityIndicator size="large" color="#2563eb" />
+                <Text style={styles.imageText}>Uploading...</Text>
+              </View>
+            ) : storeData.coverImage ? (
               <Image source={{ uri: storeData.coverImage }} style={styles.coverImage} />
             ) : (
               <View style={styles.imagePlaceholder}>
@@ -373,6 +454,29 @@ const CreateStoreScreen = ({ navigation }) => {
               </View>
             )}
           </TouchableOpacity>
+        </View>
+
+        {/* Store Profile Image */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Store Profile Picture *</Text>
+          <TouchableOpacity 
+            style={styles.profileImagePicker} 
+            onPress={() => handleImagePick('profile')}
+            disabled={uploadingImage}
+          >
+            {uploadingImage ? (
+              <View style={styles.profileImagePlaceholder}>
+                <ActivityIndicator size="small" color="#2563eb" />
+              </View>
+            ) : storeData.profileImage ? (
+              <Image source={{ uri: storeData.profileImage }} style={styles.profileImage} />
+            ) : (
+              <View style={styles.profileImagePlaceholder}>
+                <Ionicons name="person" size={32} color="#9ca3af" />
+              </View>
+            )}
+          </TouchableOpacity>
+          <Text style={styles.profileImageHint}>Square image recommended (1:1 ratio)</Text>
         </View>
 
         {/* Basic Information */}
@@ -634,6 +738,34 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 12,
     resizeMode: 'cover',
+  },
+  profileImagePicker: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 8,
+    backgroundColor: '#f9fafb',
+  },
+  profileImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 60,
+  },
+  profileImageHint: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginTop: 8,
   },
   imagePlaceholder: {
     width: '100%',

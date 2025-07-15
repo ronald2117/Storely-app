@@ -4,20 +4,32 @@ import { getFirestore } from 'firebase/firestore';
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'demo-api-key',
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || 'demo-project.firebaseapp.com',
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'demo-project-id',
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || 'demo-project.firebasestorage.app',
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '123456789',
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '1:123456789:web:abcdef123456789',
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || 'G-ABCDEF1234'
 };
 
-// Validate Firebase configuration
-const requiredConfigKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
-const missingKeys = requiredConfigKeys.filter(key => !firebaseConfig[key]);
+// Check if we're using demo/development configuration
+const isDemoConfig = firebaseConfig.apiKey === 'demo-api-key';
 
-if (missingKeys.length > 0) {
+if (isDemoConfig) {
+  console.warn('⚠️  Using demo Firebase configuration. Features will be limited.');
+  console.warn('📝 To enable full functionality, set up your Firebase project:');
+  console.warn('   1. Go to https://console.firebase.google.com/');
+  console.warn('   2. Create a new project or select existing');
+  console.warn('   3. Add a web app to your project');
+  console.warn('   4. Copy the config values to your .env file');
+}
+
+// Validate Firebase configuration for production
+const requiredConfigKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+const missingKeys = requiredConfigKeys.filter(key => !firebaseConfig[key] || firebaseConfig[key].includes('demo'));
+
+if (missingKeys.length > 0 && !isDemoConfig) {
   console.error('Missing Firebase configuration keys:', missingKeys);
   console.error('Please check your .env file and ensure all EXPO_PUBLIC_FIREBASE_* variables are set');
   throw new Error('Firebase configuration is incomplete. Please check your .env file.');
