@@ -8,11 +8,14 @@ import {
   Image, 
   Alert,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal,
+  Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import MapView, { Marker } from 'react-native-maps';
 import { useAuth } from '../context/AuthContextSimple';
 import Input from '../components/Input';
 import Button from '../components/Button';
@@ -44,16 +47,28 @@ const CreateStoreScreen = ({ navigation }) => {
       barangay: '',
       streetAddress: '',
       zipCode: '',
+      coordinates: {
+        latitude: 14.5995, // Default to Manila
+        longitude: 120.9842,
+      },
     },
     contactNumber: '',
     email: user?.email || '',
     coverImage: null,
     operatingHours: {
-      open: '8:00 AM',
-      close: '6:00 PM',
-      daysOpen: 'Monday to Saturday'
+      monday: { isOpen: true, open: '08:00', close: '18:00' },
+      tuesday: { isOpen: true, open: '08:00', close: '18:00' },
+      wednesday: { isOpen: true, open: '08:00', close: '18:00' },
+      thursday: { isOpen: true, open: '08:00', close: '18:00' },
+      friday: { isOpen: true, open: '08:00', close: '18:00' },
+      saturday: { isOpen: true, open: '08:00', close: '18:00' },
+      sunday: { isOpen: false, open: '08:00', close: '18:00' },
     }
   });
+
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [showHoursModal, setShowHoursModal] = useState(false);
+  const [tempLocation, setTempLocation] = useState(null);
 
   // Load regions on component mount
   useEffect(() => {
@@ -249,6 +264,68 @@ const CreateStoreScreen = ({ navigation }) => {
     }
   };
 
+  // Map and location helpers
+  const handleMapPress = (event) => {
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+    setTempLocation({ latitude, longitude });
+  };
+
+  const confirmLocation = () => {
+    if (tempLocation) {
+      setStoreData(prev => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          coordinates: tempLocation
+        }
+      }));
+      setTempLocation(null);
+    }
+    setShowMapModal(false);
+  };
+
+  // Operating hours helpers
+  const updateOperatingHours = (day, field, value) => {
+    setStoreData(prev => ({
+      ...prev,
+      operatingHours: {
+        ...prev.operatingHours,
+        [day]: {
+          ...prev.operatingHours[day],
+          [field]: value
+        }
+      }
+    }));
+  };
+
+  const formatTime = (time) => {
+    if (!time) return '';
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  const getOperatingHoursSummary = () => {
+    const openDays = Object.entries(storeData.operatingHours)
+      .filter(([_, hours]) => hours.isOpen)
+      .map(([day, _]) => day.charAt(0).toUpperCase() + day.slice(1));
+    
+    if (openDays.length === 0) return 'Closed all days';
+    if (openDays.length === 7) return 'Open daily';
+    
+    // Group consecutive days
+    const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const openDayIndices = openDays.map(day => dayOrder.indexOf(day.toLowerCase()));
+    
+    if (openDayIndices.length <= 3) {
+      return openDays.join(', ');
+    }
+    
+    return `${openDays[0]} - ${openDays[openDays.length - 1]}`;
+  };
+
   const CategorySelector = () => (
     <View style={styles.section}>
       <Text style={styles.label}>Store Category *</Text>
@@ -398,6 +475,30 @@ const CreateStoreScreen = ({ navigation }) => {
             keyboardType="numeric"
             maxLength={4}
           />
+
+          {/* Map Location Picker */}
+          <View style={styles.mapSection}>
+            <Text style={styles.label}>Pin Location on Map</Text>
+            <TouchableOpacity 
+              style={styles.mapButton}
+              onPress={() => {
+                setTempLocation(storeData.location.coordinates);
+                setShowMapModal(true);
+              }}
+            >
+              <Ionicons name="location" size={20} color="#2563eb" />
+              <Text style={styles.mapButtonText}>
+                {storeData.location.coordinates ? 'Update Location' : 'Set Location on Map'}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+            </TouchableOpacity>
+            {storeData.location.coordinates && (
+              <Text style={styles.coordinatesText}>
+                Lat: {storeData.location.coordinates.latitude.toFixed(6)}, 
+                Lng: {storeData.location.coordinates.longitude.toFixed(6)}
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* Contact Information */}
@@ -424,23 +525,19 @@ const CreateStoreScreen = ({ navigation }) => {
         {/* Operating Hours */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Operating Hours</Text>
-          <View style={styles.hoursContainer}>
-            <View style={styles.hourRow}>
-              <Text style={styles.hourLabel}>Open:</Text>
-              <TouchableOpacity style={styles.timeButton}>
-                <Text style={styles.timeText}>{storeData.operatingHours.open}</Text>
-                <Ionicons name="chevron-down" size={16} color="#6b7280" />
-              </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.hoursButton}
+            onPress={() => setShowHoursModal(true)}
+          >
+            <View style={styles.hoursButtonContent}>
+              <Ionicons name="time" size={20} color="#2563eb" />
+              <View style={styles.hoursInfo}>
+                <Text style={styles.hoursTitle}>Set Business Hours</Text>
+                <Text style={styles.hoursSubtitle}>{getOperatingHoursSummary()}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#6b7280" />
             </View>
-            <View style={styles.hourRow}>
-              <Text style={styles.hourLabel}>Close:</Text>
-              <TouchableOpacity style={styles.timeButton}>
-                <Text style={styles.timeText}>{storeData.operatingHours.close}</Text>
-                <Ionicons name="chevron-down" size={16} color="#6b7280" />
-              </TouchableOpacity>
-            </View>
-          </View>
-          <Text style={styles.daysText}>{storeData.operatingHours.daysOpen}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Create Button */}
@@ -456,6 +553,110 @@ const CreateStoreScreen = ({ navigation }) => {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Map Modal */}
+      <Modal
+        visible={showMapModal}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Location on Map</Text>
+            <MapView
+              style={styles.map}
+              initialRegion={{
+                latitude: storeData.location.coordinates.latitude,
+                longitude: storeData.location.coordinates.longitude,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+              }}
+              onPress={handleMapPress}
+            >
+              {tempLocation && (
+                <Marker
+                  coordinate={tempLocation}
+                  title="Selected Location"
+                  description="This is the location you selected on the map."
+                  pinColor="#2563eb"
+                />
+              )}
+            </MapView>
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalButton} onPress={() => setShowMapModal(false)}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalButton} onPress={confirmLocation}>
+                <Text style={styles.modalButtonText}>Confirm Location</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Operating Hours Modal */}
+      <Modal
+        visible={showHoursModal}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Set Operating Hours</Text>
+              <TouchableOpacity onPress={() => setShowHoursModal(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.hoursModalContent}>
+              {Object.entries(storeData.operatingHours).map(([day, hours]) => (
+                <View key={day} style={styles.dayRow}>
+                  <View style={styles.dayHeader}>
+                    <Text style={styles.dayName}>
+                      {day.charAt(0).toUpperCase() + day.slice(1)}
+                    </Text>
+                    <Switch
+                      value={hours.isOpen}
+                      onValueChange={(value) => updateOperatingHours(day, 'isOpen', value)}
+                      trackColor={{ false: '#f3f4f6', true: '#2563eb' }}
+                      thumbColor={hours.isOpen ? '#ffffff' : '#d1d5db'}
+                    />
+                  </View>
+                  
+                  {hours.isOpen && (
+                    <View style={styles.timeRow}>
+                      <View style={styles.timePickerContainer}>
+                        <Text style={styles.timeLabel}>Open</Text>
+                        <TouchableOpacity style={styles.timePicker}>
+                          <Text style={styles.timePickerText}>{formatTime(hours.open)}</Text>
+                        </TouchableOpacity>
+                      </View>
+                      
+                      <View style={styles.timePickerContainer}>
+                        <Text style={styles.timeLabel}>Close</Text>
+                        <TouchableOpacity style={styles.timePicker}>
+                          <Text style={styles.timePickerText}>{formatTime(hours.close)}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]} 
+                onPress={() => setShowHoursModal(false)}
+              >
+                <Text style={[styles.modalButtonText, styles.saveButtonText]}>Save Hours</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -604,6 +805,161 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 32,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    elevation: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  map: {
+    width: '100%',
+    height: 300,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#2563eb',
+  },
+  // Map styles
+  mapSection: {
+    marginTop: 16,
+  },
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+  },
+  mapButtonText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#374151',
+    marginLeft: 8,
+  },
+  coordinatesText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  map: {
+    height: 300,
+    borderRadius: 8,
+    marginVertical: 16,
+  },
+  // Operating hours styles
+  hoursButton: {
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 8,
+  },
+  hoursButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  hoursInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  hoursTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  hoursSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  hoursModalContent: {
+    maxHeight: 400,
+  },
+  dayRow: {
+    marginBottom: 16,
+  },
+  dayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dayName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  timePickerContainer: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  timeLabel: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  timePicker: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 6,
+    padding: 12,
+    alignItems: 'center',
+  },
+  timePickerText: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  saveButton: {
+    backgroundColor: '#2563eb',
+  },
+  saveButtonText: {
+    color: '#ffffff',
   },
 });
 

@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ExploreScreen from './tabs/ExploreScreen';
 import FavoritesScreen from './tabs/FavoritesScreen';
 import MyStoreScreen from './tabs/MyStoreScreen';
-import ProductsScreen from './tabs/ProductsScreen';
+import ChatScreen from './tabs/ChatScreen';
 import SettingsScreen from './tabs/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -27,8 +27,8 @@ const TabNavigator = () => {
             iconName = focused ? 'heart' : 'heart-outline';
           } else if (route.name === 'MyStore') {
             iconName = focused ? 'storefront' : 'storefront-outline';
-          } else if (route.name === 'Products') {
-            iconName = focused ? 'cube' : 'cube-outline';
+          } else if (route.name === 'Chat') {
+            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
           } else if (route.name === 'Settings') {
             iconName = focused ? 'settings' : 'settings-outline';
           }
@@ -87,10 +87,10 @@ const TabNavigator = () => {
         }}
       />
       <Tab.Screen 
-        name="Products" 
-        component={ProductsScreen}
+        name="Chat" 
+        component={ChatScreen}
         options={{
-          title: 'Products',
+          title: 'Chat',
           headerShown: false,
         }}
       />

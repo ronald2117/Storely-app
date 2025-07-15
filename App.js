@@ -11,6 +11,7 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import CreateStoreScreen from './src/screens/CreateStoreScreen';
 import TabNavigator from './src/screens/TabNavigator';
 import LoadingScreen from './src/components/LoadingScreen';
+import ConversationScreen from './src/screens/ConversationScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -110,6 +111,13 @@ function AppNavigator() {
         <Stack.Screen 
           name="CreateStore" 
           component={CreateStoreScreen}
+          options={{ headerShown: false }}
+        />
+        
+        {/* Chat Flow */}
+        <Stack.Screen 
+          name="Conversation" 
+          component={ConversationScreen}
           options={{ headerShown: false }}
         />
         
