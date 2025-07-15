@@ -314,7 +314,27 @@ const CreateStoreScreen = ({ navigation }) => {
           [
             {
               text: 'OK',
-              onPress: () => navigation.navigate('MyStore')
+              onPress: () => {
+                // Navigate to HomeTabs and then to MyStore tab
+                navigation.reset({
+                  index: 0,
+                  routes: [
+                    { 
+                      name: 'HomeTabs',
+                      state: {
+                        routes: [
+                          { name: 'Explore' },
+                          { name: 'Favorites' },
+                          { name: 'MyStore' },
+                          { name: 'Chat' },
+                          { name: 'Settings' }
+                        ],
+                        index: 2, // This will select MyStore tab (index 2)
+                      }
+                    }
+                  ],
+                });
+              }
             }
           ]
         );
