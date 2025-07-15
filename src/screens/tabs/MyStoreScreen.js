@@ -18,7 +18,7 @@ import { useAuth } from '../../context/AuthContextSimple';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { uploadImageToCloudinary } from '../../services/cloudinaryService';
-import { getStoresByOwner, updateStore } from '../../services/storeService';
+import { getStoresByOwner, updateStore, getStoreProducts, addProduct, updateProduct, deleteProduct } from '../../services/storeService';
 
 const MyStoreScreen = ({ navigation }) => {
   const { isGuest, user } = useAuth();
@@ -32,36 +32,8 @@ const MyStoreScreen = ({ navigation }) => {
   // Store data state - will be loaded from Firebase
   const [storeData, setStoreData] = useState(null);
 
-  // Products state
-  const [products, setProducts] = useState([
-    {
-      id: '1',
-      name: 'Coca Cola 1.5L',
-      price: 65,
-      stock: 50,
-      category: 'Beverages',
-      image: null,
-      description: 'Refreshing cola drink'
-    },
-    {
-      id: '2', 
-      name: 'Lucky Me Pancit Canton',
-      price: 15,
-      stock: 100,
-      category: 'Instant Noodles',
-      image: null,
-      description: 'Original flavor instant noodles'
-    },
-    {
-      id: '3',
-      name: 'Surf Powder 35g',
-      price: 8,
-      stock: 75,
-      category: 'Detergent',
-      image: null,
-      description: 'Laundry detergent powder'
-    }
-  ]);
+  // Products state - will be loaded from Firebase
+  const [products, setProducts] = useState([]);
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -92,18 +64,41 @@ const MyStoreScreen = ({ navigation }) => {
         console.log('✅ Store loaded:', store);
         setStoreData(store);
         setHasStore(true);
+        
+        // Load products for this store
+        await loadStoreProducts(store.id);
       } else {
         console.log('ℹ️ No store found for user');
         setHasStore(false);
         setStoreData(null);
+        setProducts([]);
       }
     } catch (error) {
       console.error('❌ Error loading store:', error);
       // Set fallback state
       setHasStore(false);
       setStoreData(null);
+      setProducts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStoreProducts = async (storeId) => {
+    try {
+      console.log('🛒 Loading products for store:', storeId);
+      const result = await getStoreProducts(storeId);
+      
+      if (result.success) {
+        console.log('✅ Products loaded:', result.products.length);
+        setProducts(result.products);
+      } else {
+        console.log('⚠️ Failed to load products:', result.error);
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading products:', error);
+      setProducts([]);
     }
   };
 
@@ -163,23 +158,47 @@ const MyStoreScreen = ({ navigation }) => {
     }
   };
 
-  const addProduct = () => {
+  const addProductToStore = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.stock) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    const product = {
-      id: Date.now().toString(),
-      ...newProduct,
-      price: parseFloat(newProduct.price),
-      stock: parseInt(newProduct.stock),
-    };
+    if (!storeData?.id) {
+      Alert.alert('Error', 'No store found to add product to');
+      return;
+    }
 
-    setProducts(prev => [...prev, product]);
-    setNewProduct({ name: '', price: '', stock: '', category: '', description: '', image: null });
-    setShowProductModal(false);
-    Alert.alert('Success', 'Product added successfully!');
+    setLoading(true);
+    try {
+      const productData = {
+        ...newProduct,
+        price: parseFloat(newProduct.price),
+        stock: parseInt(newProduct.stock),
+      };
+
+      console.log('🛒 Adding product to store:', storeData.id);
+      const result = await addProduct(storeData.id, productData);
+      
+      if (result.success) {
+        console.log('✅ Product added successfully');
+        Alert.alert('Success', 'Product added successfully!');
+        
+        // Reload products to show the new one
+        await loadStoreProducts(storeData.id);
+        
+        // Reset form
+        setNewProduct({ name: '', price: '', stock: '', category: '', description: '', image: null });
+        setShowProductModal(false);
+      } else {
+        throw new Error(result.error || 'Failed to add product');
+      }
+    } catch (error) {
+      console.error('❌ Error adding product:', error);
+      Alert.alert('Error', 'Failed to add product: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const editProduct = (product) => {
@@ -195,25 +214,51 @@ const MyStoreScreen = ({ navigation }) => {
     setShowProductModal(true);
   };
 
-  const updateProduct = () => {
+  const updateProductInStore = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.stock) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    setProducts(prev => prev.map(p => 
-      p.id === editingProduct.id 
-        ? { ...newProduct, id: editingProduct.id, price: parseFloat(newProduct.price), stock: parseInt(newProduct.stock) }
-        : p
-    ));
-    
-    setNewProduct({ name: '', price: '', stock: '', category: '', description: '', image: null });
-    setEditingProduct(null);
-    setShowProductModal(false);
-    Alert.alert('Success', 'Product updated successfully!');
+    if (!editingProduct?.id) {
+      Alert.alert('Error', 'No product selected for editing');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const productData = {
+        ...newProduct,
+        price: parseFloat(newProduct.price),
+        stock: parseInt(newProduct.stock),
+      };
+
+      console.log('📝 Updating product:', editingProduct.id);
+      const result = await updateProduct(editingProduct.id, productData);
+      
+      if (result.success) {
+        console.log('✅ Product updated successfully');
+        Alert.alert('Success', 'Product updated successfully!');
+        
+        // Reload products to show the updated one
+        await loadStoreProducts(storeData.id);
+        
+        // Reset form
+        setNewProduct({ name: '', price: '', stock: '', category: '', description: '', image: null });
+        setEditingProduct(null);
+        setShowProductModal(false);
+      } else {
+        throw new Error(result.error || 'Failed to update product');
+      }
+    } catch (error) {
+      console.error('❌ Error updating product:', error);
+      Alert.alert('Error', 'Failed to update product: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteProduct = (productId) => {
+  const deleteProductFromStore = (productId) => {
     Alert.alert(
       'Delete Product',
       'Are you sure you want to delete this product?',
@@ -222,9 +267,27 @@ const MyStoreScreen = ({ navigation }) => {
         { 
           text: 'Delete', 
           style: 'destructive',
-          onPress: () => {
-            setProducts(prev => prev.filter(p => p.id !== productId));
-            Alert.alert('Success', 'Product deleted successfully!');
+          onPress: async () => {
+            setLoading(true);
+            try {
+              console.log('🗑️ Deleting product:', productId);
+              const result = await deleteProduct(productId);
+              
+              if (result.success) {
+                console.log('✅ Product deleted successfully');
+                Alert.alert('Success', 'Product deleted successfully!');
+                
+                // Reload products to remove the deleted one
+                await loadStoreProducts(storeData.id);
+              } else {
+                throw new Error(result.error || 'Failed to delete product');
+              }
+            } catch (error) {
+              console.error('❌ Error deleting product:', error);
+              Alert.alert('Error', 'Failed to delete product: ' + error.message);
+            } finally {
+              setLoading(false);
+            }
           }
         }
       ]
@@ -561,7 +624,7 @@ const MyStoreScreen = ({ navigation }) => {
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.actionButton}
-                    onPress={() => deleteProduct(product.id)}
+                    onPress={() => deleteProductFromStore(product.id)}
                   >
                     <Ionicons name="trash" size={16} color="#dc2626" />
                   </TouchableOpacity>
@@ -676,11 +739,11 @@ const MyStoreScreen = ({ navigation }) => {
             onPress={loadUserStore}
             disabled={loading}
           >
-            <Ionicons 
-              name="refresh" 
-              size={24} 
-              color={loading ? "#9ca3af" : "#374151"} 
-            />
+            {loading ? (
+              <ActivityIndicator size="small" color="#2563eb" />
+            ) : (
+              <Ionicons name="refresh" size={24} color="#374151" />
+            )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerAction}>
             <Ionicons name="notifications-outline" size={24} color="#374151" />
@@ -810,16 +873,15 @@ const MyStoreScreen = ({ navigation }) => {
                 }}
               >
                 <Text style={[styles.modalButtonText, styles.cancelButtonText]}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={editingProduct ? updateProduct : addProduct}
-              >
-                <Text style={[styles.modalButtonText, styles.saveButtonText]}>
-                  {editingProduct ? 'Update' : 'Add Product'}
-                </Text>
-              </TouchableOpacity>
+              </TouchableOpacity>                <TouchableOpacity 
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={editingProduct ? updateProductInStore : addProductToStore}
+                  disabled={loading}
+                >
+                  <Text style={[styles.modalButtonText, styles.saveButtonText]}>
+                    {loading ? 'Saving...' : (editingProduct ? 'Update' : 'Add Product')}
+                  </Text>
+                </TouchableOpacity>
             </View>
           </View>
         </View>

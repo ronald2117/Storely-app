@@ -76,9 +76,6 @@ const initializeServices = () => {
 // Initialize Firebase services
 export const initializeFirebase = async () => {
   try {
-    // Add a small delay to ensure React Native is ready
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
     const services = initializeServices();
     console.log('✅ Firebase fully initialized');
     return services;

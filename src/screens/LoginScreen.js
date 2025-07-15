@@ -38,26 +38,44 @@ const LoginScreen = ({ navigation }) => {
     setLoading(true);
     try {
       await signIn(email.trim(), password);
-      navigation.navigate('HomeTabs');
+      
+      // Navigation will be handled automatically by AuthContext
+      // when the user state changes
+      console.log('✅ Login successful, redirecting...');
+      
     } catch (error) {
+      console.error('Login error:', error);
+      
       let errorMessage = 'Login failed. Please try again.';
       
+      // Handle Firebase Auth errors
       switch (error.code) {
         case 'auth/user-not-found':
-          errorMessage = 'No account found with this email.';
+          errorMessage = 'No account found with this email. Please check your email or create a new account.';
           break;
         case 'auth/wrong-password':
-          errorMessage = 'Incorrect password.';
+          errorMessage = 'Incorrect password. Please try again.';
           break;
         case 'auth/invalid-email':
           errorMessage = 'Please enter a valid email address.';
           break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Too many failed attempts. Please try again later.';
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled. Please contact support.';
           break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many failed login attempts. Please try again later.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your connection and try again.';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password. Please check your credentials.';
+          break;
+        default:
+          errorMessage = error.message || 'An unexpected error occurred. Please try again.';
       }
       
-      Alert.alert('Login Error', errorMessage);
+      Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
     }

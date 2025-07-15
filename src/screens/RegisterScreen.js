@@ -61,30 +61,54 @@ const RegisterScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      await signUp(formData.email.trim(), formData.password);
+      // Call Firebase signup with additional user data
+      await signUp(formData.email.trim(), formData.password, {
+        name: formData.name.trim(),
+        userType: 'seller' // Default user type for Storely
+      });
       
-      // TODO: Save user profile to Firestore
       Alert.alert(
-        'Account Created!', 
-        'Welcome to Storely! You can now set up your store and start selling.',
-        [{ text: 'Continue', onPress: () => navigation.navigate('HomeTabs') }]
+        'Account Created Successfully!', 
+        'Welcome to Storely! You can now start exploring or create your own store.',
+        [{ 
+          text: 'Get Started', 
+          onPress: () => {
+            // Navigate to main tabs - the auth state change will handle this automatically
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'HomeTabs' }]
+            });
+          }
+        }]
       );
+      
     } catch (error) {
+      console.error('Registration error:', error);
+      
       let errorMessage = 'Registration failed. Please try again.';
       
+      // Handle Firebase Auth errors
       switch (error.code) {
         case 'auth/email-already-in-use':
-          errorMessage = 'An account with this email already exists.';
+          errorMessage = 'An account with this email already exists. Please try logging in instead.';
           break;
         case 'auth/invalid-email':
           errorMessage = 'Please enter a valid email address.';
           break;
         case 'auth/weak-password':
-          errorMessage = 'Password is too weak. Please choose a stronger password.';
+          errorMessage = 'Password is too weak. Please choose a stronger password (at least 6 characters).';
           break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email registration is not enabled. Please contact support.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your connection and try again.';
+          break;
+        default:
+          errorMessage = error.message || 'An unexpected error occurred. Please try again.';
       }
       
-      Alert.alert('Registration Error', errorMessage);
+      Alert.alert('Registration Failed', errorMessage);
     } finally {
       setLoading(false);
     }

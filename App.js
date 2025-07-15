@@ -1,9 +1,16 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text } from 'react-native';
+import { View, Text, LogBox } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContextSimple';
 import { initializeFirebase } from './src/services/firebase';
+
+// Suppress Firebase connection warnings during development
+LogBox.ignoreLogs([
+  'Firestore (11.10.0): WebChannelConnection RPC',
+  '@firebase/firestore: Firestore',
+  'Setting a timer for a long period of time',
+]);
 
 // Import screens
 import StartScreen from './src/screens/StartScreen';

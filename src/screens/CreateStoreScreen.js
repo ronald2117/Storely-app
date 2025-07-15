@@ -310,36 +310,33 @@ const CreateStoreScreen = ({ navigation }) => {
       if (result.success) {
         console.log('✅ Store created successfully:', result.storeId);
         
-        Alert.alert(
-          'Store Created!',
-          'Your store has been successfully created. You can now start adding products.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Navigate to HomeTabs and then to MyStore tab
-                navigation.reset({
-                  index: 0,
-                  routes: [
-                    { 
-                      name: 'HomeTabs',
-                      state: {
-                        routes: [
-                          { name: 'Explore' },
-                          { name: 'Favorites' },
-                          { name: 'MyStore' },
-                          { name: 'Chat' },
-                          { name: 'Settings' }
-                        ],
-                        index: 2, // This will select MyStore tab (index 2)
-                      }
-                    }
-                  ],
-                });
+        // Navigate immediately to MyStore tab
+        navigation.reset({
+          index: 0,
+          routes: [
+            { 
+              name: 'HomeTabs',
+              state: {
+                routes: [
+                  { name: 'Explore' },
+                  { name: 'Favorites' },
+                  { name: 'MyStore' },
+                  { name: 'Chat' },
+                  { name: 'Settings' }
+                ],
+                index: 2, // This will select MyStore tab (index 2)
               }
             }
-          ]
-        );
+          ],
+        });
+        
+        // Show success message after navigation
+        setTimeout(() => {
+          Alert.alert(
+            'Store Created!',
+            'Your store has been successfully created. You can now start adding products.'
+          );
+        }, 500);
       } else {
         throw new Error(result.error || 'Failed to create store');
       }

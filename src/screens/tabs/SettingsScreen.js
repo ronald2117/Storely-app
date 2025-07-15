@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContextSimple';
 
 const SettingsScreen = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout, isGuest } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [locationServices, setLocationServices] = useState(true);
@@ -16,7 +16,19 @@ const SettingsScreen = () => {
       'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign Out', style: 'destructive', onPress: signOut },
+        { 
+          text: 'Sign Out', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              await logout();
+              console.log('✅ User signed out successfully');
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          }
+        },
       ]
     );
   };
@@ -55,12 +67,12 @@ const SettingsScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* User Profile Section */}
-        {user && (
+        {user && !isGuest && (
           <SettingSection title="Profile">
             <SettingItem
               icon="person-circle"
-              title={user.name || user.email || 'Guest User'}
-              subtitle={user.email || 'guest@example.com'}
+              title={user.displayName || user.name || user.email || 'User'}
+              subtitle={user.email || 'No email provided'}
               onPress={() => {}}
               showChevron
             />
