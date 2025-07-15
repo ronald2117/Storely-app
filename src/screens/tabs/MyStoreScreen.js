@@ -18,44 +18,19 @@ import { useAuth } from '../../context/AuthContextSimple';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { uploadImageToCloudinary } from '../../services/cloudinaryService';
+import { getStoresByOwner, updateStore } from '../../services/storeService';
 
 const MyStoreScreen = ({ navigation }) => {
   const { isGuest, user } = useAuth();
   const [hasStore, setHasStore] = useState(false); 
   const [activeTab, setActiveTab] = useState('overview');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   
-  // Store data state
-  const [storeData, setStoreData] = useState({
-    id: '1',
-    name: 'Lola Maria\'s Sari-Sari Store',
-    description: 'Fresh goods and daily essentials for the community',
-    category: 'sari-sari',
-    coverImage: null,
-    profileImage: null,
-    location: {
-      region: 'Region IV-A',
-      province: 'Batangas',
-      city: 'Tanauan City',
-      barangay: 'Barangay 1',
-      streetAddress: '123 Main Street',
-    },
-    contactNumber: '09123456789',
-    email: 'lolamaria@gmail.com',
-    status: 'active',
-    operatingHours: {
-      monday: { isOpen: true, open: '08:00', close: '18:00' },
-      tuesday: { isOpen: true, open: '08:00', close: '18:00' },
-      wednesday: { isOpen: true, open: '08:00', close: '18:00' },
-      thursday: { isOpen: true, open: '08:00', close: '18:00' },
-      friday: { isOpen: true, open: '08:00', close: '18:00' },
-      saturday: { isOpen: true, open: '08:00', close: '18:00' },
-      sunday: { isOpen: false, open: '08:00', close: '18:00' },
-    }
-  });
+  // Store data state - will be loaded from Firebase
+  const [storeData, setStoreData] = useState(null);
 
   // Products state
   const [products, setProducts] = useState([
@@ -98,15 +73,43 @@ const MyStoreScreen = ({ navigation }) => {
   });
 
   useEffect(() => {
-    // TODO: Check if user has a store and load store data
-    // For now, we'll simulate having a store after creation
-    checkUserStore();
-  }, []);
+    // Load user's store data when component mounts
+    if (!isGuest && user) {
+      loadUserStore();
+    } else {
+      setLoading(false);
+    }
+  }, [user, isGuest]);
+
+  const loadUserStore = async () => {
+    setLoading(true);
+    try {
+      console.log('🏪 Loading store for user:', user?.uid);
+      const result = await getStoresByOwner(user?.uid || 'guest');
+      
+      if (result.success && result.stores.length > 0) {
+        const store = result.stores[0]; // Get the first store
+        console.log('✅ Store loaded:', store);
+        setStoreData(store);
+        setHasStore(true);
+      } else {
+        console.log('ℹ️ No store found for user');
+        setHasStore(false);
+        setStoreData(null);
+      }
+    } catch (error) {
+      console.error('❌ Error loading store:', error);
+      // Set fallback state
+      setHasStore(false);
+      setStoreData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkUserStore = async () => {
-    // TODO: Implement actual store checking logic
-    // For demo purposes, we'll assume user has a store
-    setHasStore(true);
+    // This function is replaced by loadUserStore
+    await loadUserStore();
   };
 
   const handleImagePick = async (imageType = 'cover') => {
@@ -250,6 +253,30 @@ const MyStoreScreen = ({ navigation }) => {
     }));
   };
 
+  const saveStoreChanges = async () => {
+    if (!storeData?.id) {
+      Alert.alert('Error', 'No store data to save');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log('💾 Saving store changes for:', storeData.id);
+      const result = await updateStore(storeData.id, storeData);
+      
+      if (result.success) {
+        Alert.alert('Success', 'Store settings updated successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to update store');
+      }
+    } catch (error) {
+      console.error('❌ Error saving store:', error);
+      Alert.alert('Error', 'Failed to save changes: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (isGuest) {
     return (
       <SafeAreaView style={styles.container}>
@@ -269,6 +296,18 @@ const MyStoreScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('Login')}
             variant="outline"
           />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show loading state while checking for stores
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2563eb" />
+          <Text style={styles.loadingText}>Loading your store...</Text>
         </View>
       </SafeAreaView>
     );
@@ -378,9 +417,9 @@ const MyStoreScreen = ({ navigation }) => {
                 </TouchableOpacity>
                 
                 <View style={styles.storeDetails}>
-                  <Text style={styles.storeName}>{storeData.name}</Text>
+                  <Text style={styles.storeName}>{storeData?.name || 'Store Name'}</Text>
                   <Text style={styles.storeLocation}>
-                    {storeData.location.barangay}, {storeData.location.city}
+                    {storeData?.location?.barangay || 'Barangay'}, {storeData?.location?.city || 'City'}
                   </Text>
                   <View style={styles.storeStatus}>
                     <View style={[styles.statusDot, { backgroundColor: '#10b981' }]} />
@@ -556,13 +595,13 @@ const MyStoreScreen = ({ navigation }) => {
               
               <Input
                 label="Store Name"
-                value={storeData.name}
+                value={storeData?.name || ''}
                 onChangeText={(text) => setStoreData(prev => ({ ...prev, name: text }))}
               />
               
               <Input
                 label="Description"
-                value={storeData.description}
+                value={storeData?.description || ''}
                 onChangeText={(text) => setStoreData(prev => ({ ...prev, description: text }))}
                 multiline
                 numberOfLines={3}
@@ -570,14 +609,14 @@ const MyStoreScreen = ({ navigation }) => {
               
               <Input
                 label="Contact Number"
-                value={storeData.contactNumber}
+                value={storeData?.contactNumber || ''}
                 onChangeText={(text) => setStoreData(prev => ({ ...prev, contactNumber: text }))}
                 keyboardType="phone-pad"
               />
               
               <Input
                 label="Email"
-                value={storeData.email}
+                value={storeData?.email || ''}
                 onChangeText={(text) => setStoreData(prev => ({ ...prev, email: text }))}
                 keyboardType="email-address"
               />
@@ -585,7 +624,7 @@ const MyStoreScreen = ({ navigation }) => {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Operating Hours</Text>
-              {Object.entries(storeData.operatingHours).map(([day, hours]) => (
+              {storeData?.operatingHours && Object.entries(storeData.operatingHours).map(([day, hours]) => (
                 <View key={day} style={styles.dayRow}>
                   <View style={styles.dayHeader}>
                     <Text style={styles.dayName}>
@@ -612,9 +651,10 @@ const MyStoreScreen = ({ navigation }) => {
 
             <View style={styles.section}>
               <Button
-                title="Save Changes"
-                onPress={() => Alert.alert('Success', 'Store settings updated!')}
+                title={loading ? "Saving..." : "Save Changes"}
+                onPress={saveStoreChanges}
                 variant="primary"
+                disabled={loading}
               />
             </View>
           </ScrollView>
@@ -630,9 +670,22 @@ const MyStoreScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Store</Text>
-        <TouchableOpacity style={styles.headerAction}>
-          <Ionicons name="notifications-outline" size={24} color="#374151" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={styles.headerAction}
+            onPress={loadUserStore}
+            disabled={loading}
+          >
+            <Ionicons 
+              name="refresh" 
+              size={24} 
+              color={loading ? "#9ca3af" : "#374151"} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerAction}>
+            <Ionicons name="notifications-outline" size={24} color="#374151" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tab Navigation */}
@@ -780,6 +833,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
   },
+  
+  // Loading State Styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginTop: 16,
+  },
+  
   // Guest State Styles
   guestContainer: {
     flex: 1,
@@ -877,6 +944,10 @@ const styles = StyleSheet.create({
   },
   headerAction: {
     padding: 8,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   // Tab Navigation

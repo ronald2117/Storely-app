@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContextSimple';
+import { initializeFirebase } from './src/services/firebase';
 
 // Import screens
 import StartScreen from './src/screens/StartScreen';
@@ -133,6 +134,21 @@ function AppNavigator() {
 }
 
 export default function App() {
+  // Initialize Firebase when app starts
+  useEffect(() => {
+    const initFirebase = async () => {
+      try {
+        await initializeFirebase();
+        console.log('🚀 Firebase initialized successfully in App.js');
+      } catch (error) {
+        console.warn('⚠️ Firebase initialization failed in App.js:', error.message);
+        // Continue anyway - app will work in demo mode
+      }
+    };
+    
+    initFirebase();
+  }, []);
+
   return (
     <AuthProvider>
       <AppNavigator />

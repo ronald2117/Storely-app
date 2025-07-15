@@ -308,6 +308,8 @@ const CreateStoreScreen = ({ navigation }) => {
       const result = await createStore(storeDataToSave);
       
       if (result.success) {
+        console.log('✅ Store created successfully:', result.storeId);
+        
         Alert.alert(
           'Store Created!',
           'Your store has been successfully created. You can now start adding products.',
