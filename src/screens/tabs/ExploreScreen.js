@@ -6,6 +6,7 @@ import Button from '../../components/Button';
 
 const ExploreScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('Tanauan City, Batangas');
   const [activeView, setActiveView] = useState('map'); // 'map' or 'list'
 
   const categories = [
@@ -18,10 +19,10 @@ const ExploreScreen = () => {
   ];
 
   const nearbyStores = [
-    { name: 'Lola Maria\'s Sari-Sari Store', category: 'Groceries', distance: '0.1 km', rating: 4.8 },
-    { name: 'Barangay Fresh Market', category: 'Food & Drinks', distance: '0.3 km', rating: 4.6 },
-    { name: 'TechHub Electronics', category: 'Electronics', distance: '0.5 km', rating: 4.9 },
-    { name: 'Kuya Jun\'s Repair Shop', category: 'Services', distance: '0.7 km', rating: 4.7 },
+    { name: 'Lola Maria\'s Sari-Sari Store', category: 'Groceries', distance: '0.1 km', rating: 4.8, location: 'Tanauan City' },
+    { name: 'Barangay Fresh Market', category: 'Food & Drinks', distance: '0.3 km', rating: 4.6, location: 'Tanauan City' },
+    { name: 'TechHub Electronics', category: 'Electronics', distance: '0.5 km', rating: 4.9, location: 'Tanauan City' },
+    { name: 'Kuya Jun\'s Repair Shop', category: 'Services', distance: '0.7 km', rating: 4.7, location: 'Tanauan City' },
   ];
 
   return (
@@ -49,6 +50,16 @@ const ExploreScreen = () => {
           <TouchableOpacity style={styles.filterButton}>
             <Ionicons name="options" size={20} color="#2563eb" />
           </TouchableOpacity>
+        </View>
+
+        {/* Location Selector */}
+        <View style={styles.locationContainer}>
+          <TouchableOpacity style={styles.locationSelector}>
+            <Ionicons name="location" size={18} color="#2563eb" />
+            <Text style={styles.locationText}>{selectedLocation}</Text>
+            <Ionicons name="chevron-down" size={16} color="#6b7280" />
+          </TouchableOpacity>
+          <Text style={styles.locationSubtext}>Tap to change your location</Text>
         </View>
 
         {/* View Toggle */}
@@ -339,6 +350,33 @@ const styles = StyleSheet.create({
   categoryCount: {
     fontSize: 12,
     color: '#6b7280',
+  },
+  locationContainer: {
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
+  locationSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 4,
+  },
+  locationText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#374151',
+    marginLeft: 8,
+  },
+  locationSubtext: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginTop: 4,
   },
   quickActions: {
     flexDirection: 'row',

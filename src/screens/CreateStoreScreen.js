@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import MapView, { Marker } from 'react-native-maps';
 import { useAuth } from '../context/AuthContextSimple';
 import Input from '../components/Input';
 import Button from '../components/Button';
@@ -47,10 +46,6 @@ const CreateStoreScreen = ({ navigation }) => {
       barangay: '',
       streetAddress: '',
       zipCode: '',
-      coordinates: {
-        latitude: 14.5995, // Default to Manila
-        longitude: 120.9842,
-      },
     },
     contactNumber: '',
     email: user?.email || '',
@@ -66,9 +61,7 @@ const CreateStoreScreen = ({ navigation }) => {
     }
   });
 
-  const [showMapModal, setShowMapModal] = useState(false);
   const [showHoursModal, setShowHoursModal] = useState(false);
-  const [tempLocation, setTempLocation] = useState(null);
 
   // Load regions on component mount
   useEffect(() => {
@@ -475,30 +468,6 @@ const CreateStoreScreen = ({ navigation }) => {
             keyboardType="numeric"
             maxLength={4}
           />
-
-          {/* Map Location Picker */}
-          <View style={styles.mapSection}>
-            <Text style={styles.label}>Pin Location on Map</Text>
-            <TouchableOpacity 
-              style={styles.mapButton}
-              onPress={() => {
-                setTempLocation(storeData.location.coordinates);
-                setShowMapModal(true);
-              }}
-            >
-              <Ionicons name="location" size={20} color="#2563eb" />
-              <Text style={styles.mapButtonText}>
-                {storeData.location.coordinates ? 'Update Location' : 'Set Location on Map'}
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color="#6b7280" />
-            </TouchableOpacity>
-            {storeData.location.coordinates && (
-              <Text style={styles.coordinatesText}>
-                Lat: {storeData.location.coordinates.latitude.toFixed(6)}, 
-                Lng: {storeData.location.coordinates.longitude.toFixed(6)}
-              </Text>
-            )}
-          </View>
         </View>
 
         {/* Contact Information */}
@@ -553,47 +522,6 @@ const CreateStoreScreen = ({ navigation }) => {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
-
-      {/* Map Modal */}
-      <Modal
-        visible={showMapModal}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Location on Map</Text>
-            <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: storeData.location.coordinates.latitude,
-                longitude: storeData.location.coordinates.longitude,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
-              }}
-              onPress={handleMapPress}
-            >
-              {tempLocation && (
-                <Marker
-                  coordinate={tempLocation}
-                  title="Selected Location"
-                  description="This is the location you selected on the map."
-                  pinColor="#2563eb"
-                />
-              )}
-            </MapView>
-            
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalButton} onPress={() => setShowMapModal(false)}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={confirmLocation}>
-                <Text style={styles.modalButtonText}>Confirm Location</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Operating Hours Modal */}
       <Modal
@@ -848,37 +776,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#2563eb',
-  },
-  // Map styles
-  mapSection: {
-    marginTop: 16,
-  },
-  mapButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 8,
-  },
-  mapButtonText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#374151',
-    marginLeft: 8,
-  },
-  coordinatesText: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  map: {
-    height: 300,
-    borderRadius: 8,
-    marginVertical: 16,
   },
   // Operating hours styles
   hoursButton: {
