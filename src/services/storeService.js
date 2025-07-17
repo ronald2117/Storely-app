@@ -6,8 +6,13 @@ export const createStore = async (storeData) => {
   try {
     console.log('🏪 Creating store...');
     
-    // Get Firebase db instance
-    const db = await getFirebaseDb();
+    // Get Firebase db instance (now synchronous)
+    const db = get// Get products for a store
+export const getStoreProducts = async (storeId) => {
+  try {
+    console.log('🛍️ Getting products for store:', storeId);
+    
+    const db = getFirebaseDb();seDb();
     
     // Check if Firebase is properly configured
     if (!db) {
@@ -59,7 +64,7 @@ export const createStore = async (storeData) => {
 // Update store data
 export const updateStore = async (storeId, updateData) => {
   try {
-    const db = await getFirebaseDb();
+    const db = getFirebaseDb();
     
     if (!db) {
       console.warn('Firebase not configured, cannot update store');
@@ -88,7 +93,7 @@ export const updateStore = async (storeId, updateData) => {
 // Get store by ID
 export const getStore = async (storeId) => {
   try {
-    const db = await getFirebaseDb();
+    const db = getFirebaseDb();
     
     if (!db) {
       console.warn('Firebase not configured, cannot get store');
@@ -126,7 +131,7 @@ export const getStoresByOwner = async (ownerId) => {
   try {
     console.log('🔍 Getting stores for owner:', ownerId);
     
-    const db = await getFirebaseDb();
+    const db = getFirebaseDb();
     
     if (!db) {
       console.log('🔧 Demo mode: Returning demo store data');
@@ -259,7 +264,7 @@ export const getStoresByOwner = async (ownerId) => {
 // Get stores by location
 export const getStoresByLocation = async (city, province) => {
   try {
-    const db = await getFirebaseDb();
+    const db = getFirebaseDb();
     
     if (!db) {
       console.warn('Firebase not configured, returning empty stores array');
@@ -302,7 +307,7 @@ export const addProduct = async (storeId, productData) => {
   try {
     console.log('🛒 Adding product to store:', storeId, productData);
     
-    const db = await getFirebaseDb();
+    const db = getFirebaseDb();
     
     if (!db || storeId.startsWith('demo-')) {
       console.log('🔧 Demo mode: Product addition simulated');
@@ -344,9 +349,9 @@ export const addProduct = async (storeId, productData) => {
 // Get products for a store
 export const getStoreProducts = async (storeId) => {
   try {
-    console.log('🛒 Getting products for store:', storeId);
+    console.log('�️ Getting products for store:', storeId);
     
-    const db = await getFirebaseDb();
+    const db = getFirebaseDb();
     
     if (!db || storeId.startsWith('demo-')) {
       console.log('🔧 Demo mode: Returning demo products');
@@ -415,7 +420,7 @@ export const updateProduct = async (productId, updateData) => {
   try {
     console.log('📝 Updating product:', productId, updateData);
     
-    const db = await getFirebaseDb();
+    const db = getFirebaseDb();
     
     if (!db || productId.startsWith('demo-')) {
       console.log('🔧 Demo mode: Product update simulated');
@@ -456,7 +461,7 @@ export const deleteProduct = async (productId) => {
   try {
     console.log('🗑️ Deleting product:', productId);
     
-    const db = await getFirebaseDb();
+    const db = getFirebaseDb();
     
     if (!db || productId.startsWith('demo-')) {
       console.log('🔧 Demo mode: Product deletion simulated');

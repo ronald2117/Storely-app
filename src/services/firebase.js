@@ -53,17 +53,22 @@ try {
 // Initialize services with basic auth (no AsyncStorage persistence for now)
 let auth = null;
 let db = null;
+let initialized = false;
 
 const initializeServices = () => {
   try {
-    if (!auth) {
-      auth = getAuth(app);
-      console.log('✅ Firebase Auth initialized (basic mode)');
-    }
-    
-    if (!db) {
-      db = getFirestore(app);
-      console.log('✅ Firestore initialized');
+    if (!initialized) {
+      if (!auth) {
+        auth = getAuth(app);
+        console.log('✅ Firebase Auth initialized (basic mode)');
+      }
+      
+      if (!db) {
+        db = getFirestore(app);
+        console.log('✅ Firestore initialized');
+      }
+      
+      initialized = true;
     }
     
     return { auth, db, app };
@@ -74,7 +79,7 @@ const initializeServices = () => {
 };
 
 // Initialize Firebase services
-export const initializeFirebase = async () => {
+export const initializeFirebase = () => {
   try {
     const services = initializeServices();
     console.log('✅ Firebase fully initialized');
@@ -85,22 +90,22 @@ export const initializeFirebase = async () => {
   }
 };
 
-// Lazy getters that ensure Firebase is initialized
-export const getFirebaseAuth = async () => {
+// Optimized getters that return cached instances
+export const getFirebaseAuth = () => {
   if (auth) {
     return auth;
   }
   
-  const services = await initializeFirebase();
+  const services = initializeFirebase();
   return services.auth;
 };
 
-export const getFirebaseDb = async () => {
+export const getFirebaseDb = () => {
   if (db) {
     return db;
   }
   
-  const services = await initializeFirebase();
+  const services = initializeFirebase();
   return services.db;
 };
 

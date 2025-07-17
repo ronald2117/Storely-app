@@ -25,6 +25,7 @@ const MyStoreScreen = ({ navigation }) => {
   const [hasStore, setHasStore] = useState(false); 
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true); // Start with loading true
+  const [productsLoading, setProductsLoading] = useState(false); // Separate loading for products
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -34,6 +35,9 @@ const MyStoreScreen = ({ navigation }) => {
 
   // Products state - will be loaded from Firebase
   const [products, setProducts] = useState([]);
+  
+  // Cache for faster subsequent loads
+  const [dataCache, setDataCache] = useState({ storeData: null, products: null, lastUpdate: null });
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -53,10 +57,25 @@ const MyStoreScreen = ({ navigation }) => {
     }
   }, [user, isGuest]);
 
-  const loadUserStore = async () => {
+  const loadUserStore = async (forceRefresh = false) => {
+    // Check cache first (5 minutes cache)
+    const cacheAge = dataCache.lastUpdate ? Date.now() - dataCache.lastUpdate : Infinity;
+    const cacheValid = cacheAge < 5 * 60 * 1000; // 5 minutes
+
+    if (!forceRefresh && cacheValid && dataCache.storeData) {
+      console.log('📋 Using cached store data');
+      setStoreData(dataCache.storeData);
+      setHasStore(true);
+      setProducts(dataCache.products || []);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       console.log('🏪 Loading store for user:', user?.uid);
+      
+      // Load store data first
       const result = await getStoresByOwner(user?.uid || 'guest');
       
       if (result.success && result.stores.length > 0) {
@@ -65,13 +84,22 @@ const MyStoreScreen = ({ navigation }) => {
         setStoreData(store);
         setHasStore(true);
         
-        // Load products for this store
-        await loadStoreProducts(store.id);
+        // Update cache immediately for store data
+        setDataCache(prev => ({
+          ...prev,
+          storeData: store,
+          lastUpdate: Date.now()
+        }));
+        
+        // Load products in parallel (non-blocking)
+        loadStoreProductsAsync(store.id);
+        
       } else {
         console.log('ℹ️ No store found for user');
         setHasStore(false);
         setStoreData(null);
         setProducts([]);
+        setDataCache({ storeData: null, products: null, lastUpdate: Date.now() });
       }
     } catch (error) {
       console.error('❌ Error loading store:', error);
@@ -80,7 +108,36 @@ const MyStoreScreen = ({ navigation }) => {
       setStoreData(null);
       setProducts([]);
     } finally {
-      setLoading(false);
+      setLoading(false); // Allow UI to show immediately
+    }
+  };
+
+  // Non-blocking products loader
+  const loadStoreProductsAsync = async (storeId) => {
+    setProductsLoading(true);
+    try {
+      console.log('🛒 Loading products for store:', storeId);
+      const result = await getStoreProducts(storeId);
+      
+      if (result.success) {
+        console.log('✅ Products loaded:', result.products.length);
+        setProducts(result.products);
+        
+        // Update cache
+        setDataCache(prev => ({
+          ...prev,
+          products: result.products,
+          lastUpdate: Date.now()
+        }));
+      } else {
+        console.log('⚠️ Failed to load products:', result.error);
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading products:', error);
+      setProducts([]);
+    } finally {
+      setProductsLoading(false);
     }
   };
 
@@ -92,6 +149,13 @@ const MyStoreScreen = ({ navigation }) => {
       if (result.success) {
         console.log('✅ Products loaded:', result.products.length);
         setProducts(result.products);
+        
+        // Update cache
+        setDataCache(prev => ({
+          ...prev,
+          products: result.products,
+          lastUpdate: Date.now()
+        }));
       } else {
         console.log('⚠️ Failed to load products:', result.error);
         setProducts([]);
@@ -103,8 +167,8 @@ const MyStoreScreen = ({ navigation }) => {
   };
 
   const checkUserStore = async () => {
-    // This function is replaced by loadUserStore
-    await loadUserStore();
+    // This function is replaced by loadUserStore with force refresh
+    await loadUserStore(true);
   };
 
   const handleImagePick = async (imageType = 'cover') => {
@@ -169,7 +233,7 @@ const MyStoreScreen = ({ navigation }) => {
       return;
     }
 
-    setLoading(true);
+    setProductsLoading(true);
     try {
       const productData = {
         ...newProduct,
@@ -197,7 +261,7 @@ const MyStoreScreen = ({ navigation }) => {
       console.error('❌ Error adding product:', error);
       Alert.alert('Error', 'Failed to add product: ' + error.message);
     } finally {
-      setLoading(false);
+      setProductsLoading(false);
     }
   };
 
@@ -225,7 +289,7 @@ const MyStoreScreen = ({ navigation }) => {
       return;
     }
 
-    setLoading(true);
+    setProductsLoading(true);
     try {
       const productData = {
         ...newProduct,
@@ -254,7 +318,7 @@ const MyStoreScreen = ({ navigation }) => {
       console.error('❌ Error updating product:', error);
       Alert.alert('Error', 'Failed to update product: ' + error.message);
     } finally {
-      setLoading(false);
+      setProductsLoading(false);
     }
   };
 
@@ -268,7 +332,7 @@ const MyStoreScreen = ({ navigation }) => {
           text: 'Delete', 
           style: 'destructive',
           onPress: async () => {
-            setLoading(true);
+            setProductsLoading(true);
             try {
               console.log('🗑️ Deleting product:', productId);
               const result = await deleteProduct(productId);
@@ -286,7 +350,7 @@ const MyStoreScreen = ({ navigation }) => {
               console.error('❌ Error deleting product:', error);
               Alert.alert('Error', 'Failed to delete product: ' + error.message);
             } finally {
-              setLoading(false);
+              setProductsLoading(false);
             }
           }
         }
@@ -329,6 +393,13 @@ const MyStoreScreen = ({ navigation }) => {
       
       if (result.success) {
         Alert.alert('Success', 'Store settings updated successfully!');
+        
+        // Update cache with new data
+        setDataCache(prev => ({
+          ...prev,
+          storeData: storeData,
+          lastUpdate: Date.now()
+        }));
       } else {
         throw new Error(result.error || 'Failed to update store');
       }
@@ -584,13 +655,19 @@ const MyStoreScreen = ({ navigation }) => {
           <ScrollView style={styles.tabContent}>
             <View style={styles.productsHeader}>
               <Text style={styles.sectionTitle}>All Products ({products.length})</Text>
-              <TouchableOpacity 
-                style={styles.addButton}
-                onPress={() => setShowProductModal(true)}
-              >
-                <Ionicons name="add" size={20} color="#ffffff" />
-                <Text style={styles.addButtonText}>Add Product</Text>
-              </TouchableOpacity>
+              <View style={styles.productsHeaderActions}>
+                {productsLoading && (
+                  <ActivityIndicator size="small" color="#2563eb" style={styles.productsLoader} />
+                )}
+                <TouchableOpacity 
+                  style={styles.addButton}
+                  onPress={() => setShowProductModal(true)}
+                  disabled={productsLoading}
+                >
+                  <Ionicons name="add" size={20} color="#ffffff" />
+                  <Text style={styles.addButtonText}>Add Product</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {products.map(product => (
@@ -736,7 +813,7 @@ const MyStoreScreen = ({ navigation }) => {
         <View style={styles.headerActions}>
           <TouchableOpacity 
             style={styles.headerAction}
-            onPress={loadUserStore}
+            onPress={() => loadUserStore(true)}
             disabled={loading}
           >
             {loading ? (
@@ -745,6 +822,11 @@ const MyStoreScreen = ({ navigation }) => {
               <Ionicons name="refresh" size={24} color="#374151" />
             )}
           </TouchableOpacity>
+          {productsLoading && (
+            <View style={styles.headerAction}>
+              <ActivityIndicator size="small" color="#f59e0b" />
+            </View>
+          )}
           <TouchableOpacity style={styles.headerAction}>
             <Ionicons name="notifications-outline" size={24} color="#374151" />
           </TouchableOpacity>
@@ -876,10 +958,10 @@ const MyStoreScreen = ({ navigation }) => {
               </TouchableOpacity>                <TouchableOpacity 
                   style={[styles.modalButton, styles.saveButton]}
                   onPress={editingProduct ? updateProductInStore : addProductToStore}
-                  disabled={loading}
+                  disabled={productsLoading}
                 >
                   <Text style={[styles.modalButtonText, styles.saveButtonText]}>
-                    {loading ? 'Saving...' : (editingProduct ? 'Update' : 'Add Product')}
+                    {productsLoading ? 'Saving...' : (editingProduct ? 'Update' : 'Add Product')}
                   </Text>
                 </TouchableOpacity>
             </View>
@@ -1261,6 +1343,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 16,
+  },
+  productsHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  productsLoader: {
+    marginRight: 12,
   },
   addButton: {
     flexDirection: 'row',
